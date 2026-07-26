@@ -1,0 +1,3 @@
+defaultProject: "bio-grid-datalake-des"
+defaultLocation: "us-east4" 
+defaultDataset: "stg_biodiversidad_stgo"
