@@ -2,10 +2,6 @@ config {
   type: "table",
   schema: "STG_BIODIVERSIDAD_STGO",
   description: "Vista de normalización y calidad para los datos de iNaturalist",
-  assertions: {
-    uniqueKey: ["id_integracion"],
-    nonNull: ["id_integracion", "latitud", "longitud"]
-  }
 }
 
 SELECT

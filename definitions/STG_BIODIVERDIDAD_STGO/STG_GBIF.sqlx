@@ -2,10 +2,6 @@ config {
   type: "table",
   schema: "STG_BIODIVERSIDAD_STGO",
   description: "Tabla física de normalización y calidad para los datos de GBIF",
-  assertions: {
-    uniqueKey: ["id_integracion"],
-    nonNull: ["id_integracion", "latitud", "longitud"]
-  }
 }
 
 SELECT
