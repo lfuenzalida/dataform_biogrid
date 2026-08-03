@@ -1,0 +1,36 @@
+config {
+    type: "table",
+    schema: "STG_BIODIVERSIDAD_DIMENSIONES",
+    name: "STG_COMUNAS",
+    description: "Capa Plata: Dimensión territorial purificada. Contiene exclusivamente las 32 comunas del Gran Santiago, con geometrías validadas y tipos de datos estandarizados."
+}
+
+SELECT 
+    /* 1. GOBIERNO DE DATOS: Estandarización de Nombres y Casteo Seguro */
+    CAST(cod_comuna AS STRING) AS codigo_comuna,
+    CAST(codregion AS STRING) AS codigo_region,
+    CAST(dis_elec AS STRING) AS distrito_electoral,
+    CAST(cir_sena AS STRING) AS circunscripcion_senatorial,
+    
+    /* 2. LIMPIEZA DE TEXTO: Normalización */
+    TRIM(Region) AS nombre_region,
+    TRIM(Provincia) AS nombre_provincia,
+    TRIM(Comuna) AS nombre_comuna,
+    
+    /* 3. TRANSFORMACIÓN ESPACIAL NATIVA BIGQUERY: Lectura y reparación en un solo paso */
+    ST_GEOGFROMWKB(GEOMETRIA_WKB, make_valid => TRUE) AS poligono_geografico
+
+FROM 
+    ${ref("COMUNAS")}
+
+WHERE 
+    /* 4. FILTRO DE NEGOCIO: Aislamos el Gran Santiago */
+    UPPER(TRIM(Comuna)) IN (
+        'CERRILLOS', 'ESTACIÓN CENTRAL', 'MAIPÚ', 'PUDAHUEL', 'QUILICURA', 
+        'INDEPENDENCIA', 'HUECHURABA', 'CERRO NAVIA', 'CONCHALÍ', 'LO PRADO', 
+        'QUINTA NORMAL', 'RECOLETA', 'RENCA', 'SAN JOAQUÍN', 'PROVIDENCIA', 
+        'SANTIAGO', 'LA GRANJA', 'MACUL', 'ÑUÑOA', 'PEÑALOLÉN', 'LA REINA', 
+        'VITACURA', 'LAS CONDES', 'LO BARNECHEA', 'LA FLORIDA', 'LA PINTANA', 
+        'SAN MIGUEL', 'SAN RAMÓN', 'LA CISTERNA', 'EL BOSQUE', 'LO ESPEJO', 
+        'PEDRO AGUIRRE CERDA'
+    )
