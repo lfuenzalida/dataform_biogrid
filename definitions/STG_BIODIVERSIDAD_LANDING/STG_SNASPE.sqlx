@@ -1,0 +1,12 @@
+config {
+    type: "table",
+    schema: "STG_BIODIVERSIDAD_DIMENSIONES",
+    name: "STG_SNASPE",
+    description: "Capa Plata: Estandarización de las geometrías de parques y reservas nacionales."
+}
+
+SELECT 
+    * EXCEPT(GEOMETRIA_WKB),
+    ST_MAKEVALID(ST_GEOGFROMWKB(GEOMETRIA_WKB)) AS poligono_geografico
+FROM 
+    ${ref("SNASPE")}
