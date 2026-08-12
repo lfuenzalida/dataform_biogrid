@@ -1,0 +1,22 @@
+config {
+  type: "table",
+  schema: "STG_BIODIVERSIDAD_STGO",
+  description: "Tabla física de normalización y calidad para los datos de GBIF",
+}
+
+SELECT
+    FARM_FINGERPRINT(CONCAT('GBIF-', CAST(gbif_id AS STRING))) AS id_integracion,
+    CAST(gbif_id AS STRING) AS id_origen,
+    'GBIF' AS origen_datos,
+    CAST(nombre_cientifico AS STRING) AS nombre_cientifico,
+    CAST(reino AS STRING) AS reino,
+    CAST(familia AS STRING) AS familia,
+    CAST(genero AS STRING) AS genero,
+    CAST(latitud AS FLOAT64) AS latitud,
+    CAST(longitud AS FLOAT64) AS longitud,
+    CAST(fecha_avistamiento AS TIMESTAMP) AS fecha_avistamiento,
+    CAST(NULL AS STRING) AS grado_amenaza
+FROM
+    ${ref("GBIF")}
+WHERE
+    latitud IS NOT NULL AND longitud IS NOT NULL

@@ -1,0 +1,7 @@
+config {
+  type: "declaration",
+  database: "bio-grid-datalake-des",
+  schema: "RAW_BIODIVERSIDAD_LANDING",
+  name: "COMUNAS",
+  description: "Tabla RAW con el con el dato crudo extraído del sitio del gobierno de chile"
+}

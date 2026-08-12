@@ -1,0 +1,23 @@
+config {
+    type: "table",
+    schema: "STG_BIODIVERSIDAD_DIMENSIONES",
+    name: "STG_SNASPE",
+    description: "Capa Plata: Dimensión territorial del Sistema Nacional de Áreas Silvestres Protegidas del Estado. Geometrías nativas corregidas al vuelo."
+}
+
+SELECT 
+    /* 1. GOBIERNO DE DATOS: Estandarización de Nombres y Casteo */
+    TRIM(Nombre) AS nombre_parque,
+    TRIM(Tipo_Snasp) AS categoria_parque, -- Ej: Parque Nacional, Reserva Nacional, Monumento Natural
+    TRIM(Region) AS nombre_region,
+    CAST(Cod_Region AS STRING) AS codigo_region,
+    
+    /* 2. TRANSFORMACIÓN ESPACIAL NATIVA BIGQUERY: Lectura y reparación en un solo paso */
+    ST_GEOGFROMWKB(GEOMETRIA_WKB, make_valid => TRUE) AS poligono_geografico
+
+FROM 
+    ${ref("SNASPE")}
+WHERE
+    /* 3. FILTRO DE CALIDAD: Asegurar que el parque tenga nombre */
+    Nombre IS NOT NULL
+    

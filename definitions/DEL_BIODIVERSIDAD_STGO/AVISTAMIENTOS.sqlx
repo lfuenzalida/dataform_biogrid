@@ -1,0 +1,111 @@
+config {
+  type: "table",
+  schema: "DEL_BIODIVERSIDAD_STGO",
+  name: "AVISTAMIENTOS",
+  description: "Capa Delivery: Tabla de Hechos Consolidada. Une taxonomía biológica (eBird, GBIF, iNat) y la enriquece espacialmente con los límites de las Comunas y Parques Nacionales.",
+  bigquery: {
+    partitionBy: "DATE(FECHA_AVISTAMIENTO)",
+    clusterBy: ["ORIGEN_DATOS", "codigo_comuna"] 
+  }
+}
+
+/* --------------------------------------------------------------------------
+   1. CONSOLIDACIÓN DE FUENTES BIOLÓGICAS (TAXONOMÍA COMPLETA)
+   -------------------------------------------------------------------------- */
+WITH union_fuentes AS (
+    -- Bloque eBird
+    SELECT 
+        ID_INTEGRACION, ID_ORIGEN, ORIGEN_DATOS, NOMBRE_CIENTIFICO, 
+        CAST(NULL AS STRING) AS REINO, CAST(NULL AS STRING) AS FAMILIA, CAST(NULL AS STRING) AS GENERO,
+        CAST(LATITUD AS FLOAT64) AS LATITUD, CAST(LONGITUD AS FLOAT64) AS LONGITUD, 
+        FECHA_AVISTAMIENTO, CAST(NULL AS STRING) AS GRADO_AMENAZA
+    FROM ${ref("STG_EBIRD")}
+    
+    UNION ALL
+    
+    -- Bloque iNaturalist
+    SELECT 
+        ID_INTEGRACION, ID_ORIGEN, ORIGEN_DATOS, NOMBRE_CIENTIFICO, 
+        REINO, CAST(NULL AS STRING) AS FAMILIA, CAST(NULL AS STRING) AS GENERO,
+        CAST(LATITUD AS FLOAT64) AS LATITUD, CAST(LONGITUD AS FLOAT64) AS LONGITUD, 
+        FECHA_AVISTAMIENTO, GRADO_AMENAZA
+    FROM ${ref("STG_INATURALIST")}
+    
+    UNION ALL
+    
+    -- Bloque GBIF
+    SELECT 
+        ID_INTEGRACION, ID_ORIGEN, ORIGEN_DATOS, NOMBRE_CIENTIFICO, 
+        REINO, FAMILIA, GENERO,
+        CAST(LATITUD AS FLOAT64) AS LATITUD, CAST(LONGITUD AS FLOAT64) AS LONGITUD, 
+        FECHA_AVISTAMIENTO, GRADO_AMENAZA
+    FROM ${ref("STG_GBIF")}
+),
+
+/* --------------------------------------------------------------------------
+   2. GEORREFERENCIACIÓN AL VUELO
+   -------------------------------------------------------------------------- */
+avistamientos_georreferenciados AS (
+    SELECT 
+        *,
+        ST_GEOGPOINT(LONGITUD, LATITUD) AS PUNTO_GEOESPACIAL
+    FROM 
+        union_fuentes
+    WHERE 
+        LATITUD IS NOT NULL AND LONGITUD IS NOT NULL
+),
+
+/* --------------------------------------------------------------------------
+   3. INVOCACIÓN DE DIMENSIONES ESPACIALES (Sin Hardcoding)
+   -------------------------------------------------------------------------- */
+dim_comunas AS (
+    SELECT codigo_comuna, nombre_comuna, poligono_geografico
+    FROM ${ref("STG_COMUNAS")}
+),
+
+dim_snaspe AS (
+    SELECT nombre_parque, categoria_parque, poligono_geografico
+    FROM ${ref("STG_SNASPE")}
+)
+
+/* --------------------------------------------------------------------------
+   4. MODELADO DIMENSIONAL FINAL: SPATIAL JOIN
+   -------------------------------------------------------------------------- */
+SELECT 
+    -- A. Atributos Biológicos y Trazabilidad (Del modelo original)
+    a.ID_INTEGRACION, 
+    a.ID_ORIGEN, 
+    a.ORIGEN_DATOS, 
+    a.NOMBRE_CIENTIFICO, 
+    a.REINO, 
+    a.FAMILIA, 
+    a.GENERO,
+    a.LATITUD, 
+    a.LONGITUD, 
+    a.FECHA_AVISTAMIENTO, 
+    a.GRADO_AMENAZA,
+    a.PUNTO_GEOESPACIAL,
+    
+    -- B. Enriquecimiento Geopolítico (Comuna)
+    c.codigo_comuna,
+    c.nombre_comuna,
+    
+    -- C. Enriquecimiento Ambiental (SNASPE)
+    s.nombre_parque AS snaspe_asociado,
+    s.categoria_parque AS snaspe_categoria,
+    
+    -- D. Indicador de Negocio GovTech
+    IF(s.nombre_parque IS NOT NULL, TRUE, FALSE) AS protegido_por_estado
+
+FROM 
+    avistamientos_georreferenciados a
+
+/* Cruce Espacial 1: Asignar a Comuna */
+LEFT JOIN 
+    dim_comunas c
+    ON ST_CONTAINS(c.poligono_geografico, a.PUNTO_GEOESPACIAL)
+
+/* Cruce Espacial 2: Verificar si está en Parque Nacional */
+LEFT JOIN 
+    dim_snaspe s
+    ON ST_CONTAINS(s.poligono_geografico, a.PUNTO_GEOESPACIAL)

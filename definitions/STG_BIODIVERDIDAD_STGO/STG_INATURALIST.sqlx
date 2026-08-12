@@ -1,0 +1,20 @@
+config {
+  type: "table",
+  schema: "STG_BIODIVERSIDAD_STGO",
+  description: "Vista de normalización y calidad para los datos de iNaturalist",
+}
+
+SELECT
+    FARM_FINGERPRINT(CONCAT('iNaturalist-', CAST(id_avistamiento AS STRING))) AS ID_INTEGRACION,
+    CAST(id_avistamiento AS STRING) AS ID_ORIGEN,
+    'iNaturalist' AS ORIGEN_DATOS,
+    CAST(nombre_cientifico AS STRING) AS NOMBRE_CIENTIFICO,
+    CAST(reino AS STRING) AS REINO,
+    CAST(latitud AS FLOAT64) AS LATITUD,
+    CAST(longitud AS FLOAT64) AS LONGITUD,
+    CAST(fecha_avistamiento AS TIMESTAMP) AS FECHA_AVISTAMIENTO,
+    CAST(grado_amenaza AS STRING) AS GRADO_AMENAZA
+FROM
+    ${ref("INATURALIST")}
+WHERE
+    latitud IS NOT NULL AND longitud IS NOT NULL

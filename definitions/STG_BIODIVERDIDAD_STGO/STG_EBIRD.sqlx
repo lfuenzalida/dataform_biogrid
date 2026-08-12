@@ -1,0 +1,18 @@
+config {
+  type: "table",
+  schema: "STG_BIODIVERSIDAD_STGO",
+  description: "Vista de normalización y casteo de tipos para los datos de eBird"
+}
+
+SELECT
+    FARM_FINGERPRINT(CONCAT('eBird-', CAST(id_avistamiento AS STRING))) AS ID_INTEGRACION,
+    CAST(id_avistamiento AS STRING) AS ID_ORIGEN,
+    'eBird' AS ORIGEN_DATOS,
+    CAST(nombre_cientifico AS STRING) AS NOMBRE_CIENTIFICO,
+    CAST(latitud AS FLOAT64) AS LATITUD,
+    CAST(longitud AS FLOAT64) AS LONGITUD,
+    CAST(fecha_avistamiento AS TIMESTAMP) AS FECHA_AVISTAMIENTO
+FROM
+    ${ref("EBIRD")} 
+WHERE
+    latitud IS NOT NULL AND longitud IS NOT NULL
