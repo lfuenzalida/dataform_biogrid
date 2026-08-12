@@ -9,6 +9,8 @@ SELECT
     CAST(id_avistamiento AS STRING) AS ID_ORIGEN,
     'eBird' AS ORIGEN_DATOS,
     CAST(nombre_cientifico AS STRING) AS NOMBRE_CIENTIFICO,
+    -- Regla de negocio: eBird registra observaciones de aves, pertenecientes al reino Animalia.
+    'Animalia' AS REINO,
     CAST(latitud AS FLOAT64) AS LATITUD,
     CAST(longitud AS FLOAT64) AS LONGITUD,
     CAST(fecha_avistamiento AS TIMESTAMP) AS FECHA_AVISTAMIENTO
