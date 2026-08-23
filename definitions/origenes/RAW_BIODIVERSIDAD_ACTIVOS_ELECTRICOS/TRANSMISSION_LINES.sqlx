@@ -1,7 +1,0 @@
-config {
-  type: "declaration",
-  database: "bio-grid-datalake-des",
-  schema: "RAW_BIODIVERSIDAD_ACTIVOS_ELECTRICOS",
-  name: "transmission_lines",
-  description: "Tabla RAW con el payload JSON crudo extraído de la API de ARCGIS"
-}
