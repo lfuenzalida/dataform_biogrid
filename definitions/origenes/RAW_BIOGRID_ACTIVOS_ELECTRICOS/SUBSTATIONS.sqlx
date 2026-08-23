@@ -1,0 +1,7 @@
+config {
+  type: "declaration",
+  database: "bio-grid-datalake-des",
+  schema: "RAW_BIOGRID_ACTIVOS_ELECTRICOS",
+  name: "substations",
+  description: "Fuente RAW de subestaciones electricas. La declaracion permite resolver dependencias mediante ref() sin hardcodear el origen en las consultas."
+}
